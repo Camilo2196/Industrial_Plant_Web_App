@@ -5,133 +5,180 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI S.A.S. - Layout Optimizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
     <style>
-        body { background-color: #0b1120; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .bg-panel { background-color: #1e293b; border: 1px solid #334155; }
-        .accent-blue { color: #38bdf8; }
-        .bg-accent { background-color: #0F2A44; }
-        input { background-color: #0f172a; border: 1px solid #475569; color: #f8fafc; padding: 0.5rem; border-radius: 0.25rem; width: 100%; outline: none; transition: border-color 0.2s; }
-        input:focus { border-color: #38bdf8; }
+        /* Paleta de Colores AI S.A.S */
+        :root {
+            --ai-dark: #071629;      /* Fondo principal */
+            --ai-panel: #0d213b;     /* Fondo de paneles */
+            --ai-blue: #0052a3;      /* Azul principal */
+            --ai-light-blue: #3ba3ff; /* Azul claro / neón */
+            --ai-text: #e2e8f0;      /* Texto general */
+            --ai-gray: #1e2f45;      /* Bordes y acentos grises */
+        }
+        
+        body { background-color: var(--ai-dark); color: var(--ai-text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+        .bg-panel { background-color: var(--ai-panel); border: 1px solid var(--ai-gray); box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .text-neon { color: var(--ai-light-blue); text-shadow: 0 0 10px rgba(59,163,255,0.3); }
+        
+        input { 
+            background-color: var(--ai-dark); 
+            border: 1px solid var(--ai-gray); 
+            color: white; 
+            padding: 0.5rem; 
+            border-radius: 4px; 
+            width: 100%; 
+            outline: none; 
+            transition: all 0.3s ease; 
+        }
+        input:focus { border-color: var(--ai-light-blue); box-shadow: 0 0 8px rgba(59,163,255,0.2); }
+        
         table { width: 100%; border-collapse: collapse; text-align: center; }
-        th { background-color: #0F2A44; padding: 0.75rem; border-bottom: 2px solid #38bdf8; font-size: 0.875rem; text-transform: uppercase; }
-        td { padding: 0.75rem; border-bottom: 1px solid #334155; font-size: 0.875rem; }
+        th { background-color: var(--ai-blue); color: white; padding: 0.75rem; border-bottom: 2px solid var(--ai-light-blue); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+        td { padding: 0.75rem; border-bottom: 1px solid var(--ai-gray); font-size: 0.875rem; }
+        
+        /* Botones futuristas */
+        .btn-ai { background: linear-gradient(135deg, var(--ai-blue) 0%, var(--ai-panel) 100%); border: 1px solid var(--ai-light-blue); transition: all 0.3s; }
+        .btn-ai:hover { background: var(--ai-light-blue); color: var(--ai-dark); box-shadow: 0 0 15px rgba(59,163,255,0.5); }
+        
+        .btn-export { background-color: transparent; border: 1px solid; transition: all 0.2s; }
+        .btn-export:hover { filter: brightness(1.2); }
     </style>
 </head>
-<body class="p-6">
+<body class="p-4 md:p-8" id="app-container">
 
     <!-- Encabezado -->
-    <header class="flex items-center justify-between mb-8 bg-panel p-6 rounded-lg shadow-lg">
-        <div class="flex items-center gap-4">
-            <!-- Asegúrate de subir Logo_Claro_Transparente.png a tu repo en la misma carpeta -->
-            <img src="Logo_Claro_Transparente.png" alt="AI S.A.S. Logo" class="h-16" onerror="this.src='https://via.placeholder.com/64?text=AI+SAS'">
+    <header class="flex flex-col md:flex-row items-center justify-between mb-8 bg-panel p-6 rounded-xl border-l-4 border-l-[#3ba3ff]">
+        <div class="flex items-center gap-6 mb-4 md:mb-0">
+            <img src="Logo_Claro_Transparente.png" alt="AI S.A.S." class="h-20" onerror="this.src='https://via.placeholder.com/80?text=AI+SAS'">
             <div>
-                <h1 class="text-2xl font-bold text-white">LAYOUT OPTIMIZER <span class="accent-blue text-lg">v1.0</span></h1>
-                <p class="text-sm text-slate-400">Factor Maquinaria & Método Guerchet - Automation Insights S.A.S.</p>
+                <h1 class="text-3xl font-bold tracking-wide">LAYOUT OPTIMIZER <span class="text-neon text-sm uppercase align-top">v1.1</span></h1>
+                <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest">¡Automatización que Inspira, Conocimiento que Eleva!</p>
             </div>
         </div>
-        <div class="text-right text-sm text-slate-400">
-            <p><strong>Proyecto:</strong> Medivalle (Planta Yumbo)</p>
-            <p><strong>Fecha:</strong> <span id="currentDate"></span></p>
+        <div class="text-right text-sm">
+            <p class="text-slate-300">Proyecto: <span class="font-bold text-white">Medivalle (Yumbo)</span></p>
+            <p class="text-slate-400 mt-1">Fecha: <span id="currentDate" class="text-white"></span></p>
+            <div class="mt-4 flex gap-3 justify-end" data-html2canvas-ignore="true">
+                <button onclick="exportarPDF()" class="btn-export border-red-500 text-red-400 hover:bg-red-500 hover:text-white px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider">📄 Exportar PDF</button>
+                <button onclick="exportarExcel()" class="btn-export border-green-500 text-green-400 hover:bg-green-500 hover:text-white px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider">📊 Exportar Excel</button>
+            </div>
         </div>
     </header>
 
-    <!-- Parámetros Globales -->
-    <section class="mb-8 bg-panel p-6 rounded-lg shadow-lg">
-        <h2 class="text-lg font-semibold mb-4 border-b border-slate-600 pb-2 accent-blue">Variables Globales de Producción</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <!-- Variables Globales -->
+    <section class="mb-8 bg-panel p-6 rounded-xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+        <h2 class="text-sm font-bold mb-5 uppercase tracking-wider text-neon flex justify-between items-end border-b border-[#1e2f45] pb-2">
+            <span>[01] Variables Globales de Producción</span>
+            <span class="text-[10px] text-slate-500">Parámetros Operativos</span>
+        </h2>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
-                <label class="block text-xs uppercase text-slate-400 mb-1">Demanda Anual (Unds)</label>
-                <input type="number" id="demanda" value="65000" oninput="calcularTodo()">
+                <label class="block text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Demanda Anual (Unds)</label>
+                <input type="number" id="demanda" value="65000" class="input-calc text-lg text-center font-mono">
             </div>
             <div>
-                <label class="block text-xs uppercase text-slate-400 mb-1">Días Laborales/Año</label>
-                <input type="number" id="dias" value="250" oninput="calcularTodo()">
+                <label class="block text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Días Laborales/Año</label>
+                <input type="number" id="dias" value="250" class="input-calc text-lg text-center font-mono">
             </div>
             <div>
-                <label class="block text-xs uppercase text-slate-400 mb-1">Turnos/Día</label>
-                <input type="number" id="turnos" value="3" oninput="calcularTodo()">
+                <label class="block text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Turnos/Día</label>
+                <input type="number" id="turnos" value="3" class="input-calc text-lg text-center font-mono">
             </div>
             <div>
-                <label class="block text-xs uppercase text-slate-400 mb-1">Horas/Turno</label>
-                <input type="number" id="horasTurno" value="7.5" step="0.5" oninput="calcularTodo()">
+                <label class="block text-[10px] uppercase text-slate-400 mb-2 tracking-widest">Horas/Turno</label>
+                <input type="number" id="horasTurno" value="7.5" step="0.5" class="input-calc text-lg text-center font-mono">
             </div>
         </div>
-        <div class="mt-4 p-3 bg-slate-800 rounded border border-slate-600 flex justify-between items-center">
-            <span class="text-sm font-medium">Horas Disponibles Anuales:</span>
-            <span id="horasAnuales" class="text-xl font-bold text-emerald-400">5625</span>
+        
+        <div class="mt-6 flex justify-end items-center gap-4">
+            <span class="text-xs uppercase text-slate-400 tracking-wider">Total Horas Disponibles Anuales:</span>
+            <span id="horasAnuales" class="text-2xl font-mono font-bold text-[#3ba3ff] bg-[#071629] px-4 py-2 rounded border border-[#1e2f45]">5625</span>
         </div>
     </section>
 
     <!-- Tabla de Máquinas -->
-    <section class="bg-panel p-6 rounded-lg shadow-lg overflow-x-auto">
-        <div class="flex justify-between items-center mb-4 border-b border-slate-600 pb-2">
-            <h2 class="text-lg font-semibold accent-blue">Inventario de Maquinaria y Requerimiento de Área</h2>
-            <button onclick="agregarMaquina()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm transition font-semibold">
-                + Añadir Máquina
+    <section class="bg-panel p-6 rounded-xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-1 h-full bg-[#3ba3ff]"></div>
+        <div class="flex justify-between items-center mb-5 border-b border-[#1e2f45] pb-2">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-neon">[02] Matriz de Área (Método Guerchet)</h2>
+            <button onclick="agregarMaquina('', 0, 0, 0, 0, 0)" class="btn-ai text-white px-5 py-2 rounded text-xs tracking-widest uppercase font-bold" data-html2canvas-ignore="true">
+                + Nueva Máquina
             </button>
         </div>
-        <table class="w-full min-w-[1000px]">
-            <thead>
-                <tr>
-                    <th class="w-32">Máquina</th>
-                    <th class="w-24">T. Std (h)</th>
-                    <th class="w-20">Req. Máq (N)</th>
-                    <th class="w-24">Largo (m)</th>
-                    <th class="w-24">Ancho (m)</th>
-                    <th class="w-20">Lados Acc.</th>
-                    <th class="w-20">Coef (k)</th>
-                    <th class="w-24">Área Unit (m²)</th>
-                    <th class="w-24">Área Total (m²)</th>
-                    <th class="w-12"></th>
-                </tr>
-            </thead>
-            <tbody id="tablaMaquinas">
-                <!-- Fila de ejemplo generada por JS -->
-            </tbody>
-        </table>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[900px]" id="mainTable">
+                <thead>
+                    <tr>
+                        <th class="w-40 text-left pl-4">Máquina / Estación</th>
+                        <th class="w-20">T. Std (h)</th>
+                        <th class="w-20 bg-blue-900/40">Req. (N)</th>
+                        <th class="w-20">Largo (m)</th>
+                        <th class="w-20">Ancho (m)</th>
+                        <th class="w-20">Lados</th>
+                        <th class="w-20">Coef (k)</th>
+                        <th class="w-24">Unitario (m²)</th>
+                        <th class="w-24 bg-blue-900/40">Total (m²)</th>
+                        <th class="w-10" data-html2canvas-ignore="true"></th>
+                    </tr>
+                </thead>
+                <tbody id="tablaMaquinas">
+                    <!-- Filas dinámicas -->
+                </tbody>
+            </table>
+        </div>
 
         <!-- Total de Planta -->
-        <div class="mt-6 flex justify-end">
-            <div class="bg-slate-800 border border-emerald-500 p-4 rounded-lg text-right min-w-[300px]">
-                <p class="text-sm text-slate-400 uppercase tracking-wide">Área Total Planta (Guerchet)</p>
-                <p class="text-4xl font-bold text-emerald-400 mt-1"><span id="areaTotalPlanta">0.00</span> <span class="text-xl">m²</span></p>
+        <div class="mt-8 flex justify-end">
+            <div class="bg-[#071629] border-t-2 border-t-[#3ba3ff] p-5 rounded-b-lg text-right min-w-[320px] shadow-inner">
+                <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Área Total Requerida (Planta)</p>
+                <p class="text-5xl font-mono font-bold text-white"><span id="areaTotalPlanta">0.00</span> <span class="text-xl text-[#3ba3ff]">m²</span></p>
             </div>
         </div>
     </section>
 
     <script>
         document.getElementById('currentDate').innerText = new Date().toLocaleDateString('es-CO');
-
         let maquinaCount = 0;
 
-        function agregarMaquina(nombre = '', tStd = 0.25, largo = 3, ancho = 3, lados = 1, k = 2) {
+        function agregarMaquina(nombre = '', tStd = 0, largo = 0, ancho = 0, lados = 0, k = 0) {
             maquinaCount++;
             const tbody = document.getElementById('tablaMaquinas');
             const tr = document.createElement('tr');
-            tr.id = `maq-${maquinaCount}`;
+            tr.className = "hover:bg-[#0a1b2e] transition-colors";
             tr.innerHTML = `
-                <td><input type="text" value="${nombre || 'Máquina ' + maquinaCount}" class="text-center"></td>
-                <td><input type="number" step="0.01" value="${tStd}" oninput="calcularTodo()" class="maq-tstd text-center"></td>
-                <td class="font-bold text-lg text-blue-400" id="n-${maquinaCount}">0</td>
-                <td><input type="number" step="0.1" value="${largo}" oninput="calcularTodo()" class="maq-largo text-center"></td>
-                <td><input type="number" step="0.1" value="${ancho}" oninput="calcularTodo()" class="maq-ancho text-center"></td>
-                <td><input type="number" step="1" value="${lados}" oninput="calcularTodo()" class="maq-lados text-center"></td>
-                <td><input type="number" step="0.1" value="${k}" oninput="calcularTodo()" class="maq-k text-center"></td>
-                <td class="font-mono text-slate-300" id="unit-${maquinaCount}">0.00</td>
-                <td class="font-mono font-bold text-emerald-400" id="total-${maquinaCount}">0.00</td>
-                <td><button onclick="eliminarMaquina(${maquinaCount})" class="text-red-500 hover:text-red-400 font-bold px-2 py-1">X</button></td>
+                <td class="pl-2"><input type="text" value="${nombre}" placeholder="Nombre de máquina" class="text-left font-semibold text-[#3ba3ff]"></td>
+                <td><input type="number" step="0.01" value="${tStd}" class="input-calc text-center font-mono"></td>
+                <td class="font-mono font-bold text-lg text-white bg-blue-900/20" class="n-maq">0</td>
+                <td><input type="number" step="0.1" value="${largo}" class="input-calc text-center font-mono"></td>
+                <td><input type="number" step="0.1" value="${ancho}" class="input-calc text-center font-mono"></td>
+                <td><input type="number" step="1" value="${lados}" class="input-calc text-center font-mono"></td>
+                <td><input type="number" step="0.1" value="${k}" class="input-calc text-center font-mono text-slate-400"></td>
+                <td class="font-mono text-slate-400 area-unitaria">0.00</td>
+                <td class="font-mono font-bold text-[#3ba3ff] bg-blue-900/20 area-total">0.00</td>
+                <td data-html2canvas-ignore="true">
+                    <button onclick="this.closest('tr').remove(); calcularTodo();" class="text-red-500 hover:text-red-300 bg-red-900/30 hover:bg-red-900/60 rounded px-2 py-1 transition">✕</button>
+                </td>
             `;
             tbody.appendChild(tr);
+            activarListeners();
             calcularTodo();
         }
 
-        function eliminarMaquina(id) {
-            document.getElementById(`maq-${id}`).remove();
-            calcularTodo();
+        // Sistema Reactivo Robusto
+        function activarListeners() {
+            document.querySelectorAll('.input-calc').forEach(input => {
+                input.removeEventListener('input', calcularTodo); // Evitar duplicados
+                input.addEventListener('input', calcularTodo);
+            });
         }
 
         function calcularTodo() {
-            // Parámetros globales
             const demanda = parseFloat(document.getElementById('demanda').value) || 0;
             const dias = parseFloat(document.getElementById('dias').value) || 0;
             const turnos = parseFloat(document.getElementById('turnos').value) || 0;
@@ -142,46 +189,100 @@
 
             let granTotalArea = 0;
 
-            // Recorrer filas
             const filas = document.querySelectorAll('#tablaMaquinas tr');
             filas.forEach(fila => {
-                const idStr = fila.id.split('-')[1];
-                
-                const tStd = parseFloat(fila.querySelector('.maq-tstd').value) || 0;
-                const largo = parseFloat(fila.querySelector('.maq-largo').value) || 0;
-                const ancho = parseFloat(fila.querySelector('.maq-ancho').value) || 0;
-                const lados = parseFloat(fila.querySelector('.maq-lados').value) || 0;
-                const k = parseFloat(fila.querySelector('.maq-k').value) || 0;
+                const inputs = fila.querySelectorAll('input[type="number"]');
+                if(inputs.length < 5) return;
 
-                // 1. Factor Maquinaria (N)
+                const tStd = parseFloat(inputs[0].value) || 0;
+                const largo = parseFloat(inputs[1].value) || 0;
+                const ancho = parseFloat(inputs[2].value) || 0;
+                const lados = parseFloat(inputs[3].value) || 0;
+                const k = parseFloat(inputs[4].value) || 0;
+
                 let nMaq = 0;
-                if (horasAnuales > 0) {
+                if (horasAnuales > 0 && tStd > 0 && demanda > 0) {
                     nMaq = Math.ceil((tStd * demanda) / horasAnuales);
                 }
-                document.getElementById(`n-${idStr}`).innerText = nMaq;
+                fila.querySelector('.n-maq').innerText = nMaq;
 
-                // 2. Método Guerchet
                 const se = largo * ancho;
                 const sg = se * lados;
                 const sc = (se + sg) * k;
                 
                 const areaUnitaria = se + sg + sc;
-                const areaTotal Fila = areaUnitaria * nMaq;
+                const areaTotalFila = areaUnitaria * nMaq;
 
-                document.getElementById(`unit-${idStr}`).innerText = areaUnitaria.toFixed(2);
-                document.getElementById(`total-${idStr}`).innerText = areaTotalFila.toFixed(2);
+                fila.querySelector('.area-unitaria').innerText = areaUnitaria.toFixed(2);
+                fila.querySelector('.area-total').innerText = areaTotalFila.toFixed(2);
 
                 granTotalArea += areaTotalFila;
             });
 
-            document.getElementById('areaTotalPlanta').innerText = granTotalArea.toFixed(2);
+            document.getElementById('areaTotalPlanta').innerText = granTotalArea.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
-        // Cargar filas de ejemplo iniciales
+        // Exportación PDF
+        function exportarPDF() {
+            const elemento = document.getElementById('app-container');
+            const opciones = {
+                margin:       0.3,
+                filename:     'AI_SAS_Layout_Report.pdf',
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#071629' },
+                jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
+            };
+            html2pdf().set(opciones).from(elemento).save();
+        }
+
+        // Exportación Excel
+        function exportarExcel() {
+            const wb = XLSX.utils.book_new();
+            const ws_data = [
+                ["AUTOMATION INSIGHTS S.A.S. - LAYOUT OPTIMIZER v1.1"],
+                ["¡Automatización que Inspira, Conocimiento que Eleva!"],
+                [],
+                ["Proyecto:", "Medivalle (Planta Yumbo)"],
+                ["Fecha:", document.getElementById('currentDate').innerText],
+                [],
+                ["VARIABLES GLOBALES"],
+                ["Demanda Anual (Unds)", document.getElementById('demanda').value],
+                ["Días Laborales/Año", document.getElementById('dias').value],
+                ["Turnos/Día", document.getElementById('turnos').value],
+                ["Horas/Turno", document.getElementById('horasTurno').value],
+                ["Horas Disp. Anuales", document.getElementById('horasAnuales').innerText],
+                [],
+                ["MATRIZ DE ÁREA (GUERCHET)"],
+                ["Máquina", "T. Std (h)", "Req. (N)", "Largo (m)", "Ancho (m)", "Lados", "Coef (k)", "Área Unit (m²)", "Área Total (m²)"]
+            ];
+
+            document.querySelectorAll('#tablaMaquinas tr').forEach(fila => {
+                const inputs = fila.querySelectorAll('input');
+                ws_data.push([
+                    inputs[0].value,
+                    inputs[1].value,
+                    fila.querySelector('.n-maq').innerText,
+                    inputs[2].value,
+                    inputs[3].value,
+                    inputs[4].value,
+                    inputs[5].value,
+                    fila.querySelector('.area-unitaria').innerText,
+                    fila.querySelector('.area-total').innerText
+                ]);
+            });
+
+            ws_data.push(["", "", "", "", "", "", "", "ÁREA TOTAL PLANTA (m²):", document.getElementById('areaTotalPlanta').innerText]);
+            
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            XLSX.utils.book_append_sheet(wb, ws, "Layout");
+            XLSX.writeFile(wb, "AI_SAS_Layout.xlsx");
+        }
+
+        // Inicialización
         window.onload = () => {
-            agregarMaquina('Prensado', 0.2, 2.5, 2.0, 1, 2);
-            agregarMaquina('Fresadoras', 1.8, 3.4, 3.0, 1, 2);
-            agregarMaquina('Taladros', 1.2, 1.5, 2.0, 4, 1.5);
+            activarListeners();
+            // Iniciar con una máquina en cero
+            agregarMaquina('', 0, 0, 0, 0, 0);
         };
     </script>
 </body>
